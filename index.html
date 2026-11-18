@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Bonjour</title>
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: #121212;
+      color: #f5f5f5;
+      font-family: Arial, sans-serif;
+    }
+
+    p {
+      margin: 0;
+      font-size: 48px;
+    }
+
+    #messages {
+      position: fixed;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(900px, calc(100% - 40px));
+      max-height: calc(100vh - 220px);
+      overflow-y: auto;
+      text-align: center;
+      font-size: 20px;
+      color: #f5f5f5;
+    }
+
+    .resultats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .resultat {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 10px;
+      color: #f5f5f5;
+    }
+
+    .resultat img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 5px;
+    }
+
+    .barre-recherche {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      width: min(500px, calc(100% - 40px));
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      font-size: 24px;
+      padding: 12px;
+      background: #1e1e1e;
+      color: #f5f5f5;
+      border: 1px solid #555;
+      border-radius: 6px;
+    }
+
+    input::placeholder {
+      color: #aaa;
+    }
+
+    button {
+      font-size: 20px;
+      padding: 12px 18px;
+      cursor: pointer;
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 6px;
+    }
+
+    button:hover {
+      background: #444;
+    }
+  </style>
+</head>
+<body>
+  <p>bonjour</p>
+
+  <div id="messages"></div>
+
+  <form class="barre-recherche" id="recherche">
+    <input id="saisie" type="text" placeholder="Titre d'un film">
+    <button type="submit">Envoyer</button>
+  </form>
+
+  <script>
+    const formulaire = document.getElementById("recherche");
+    const saisie = document.getElementById("saisie");
+    const messages = document.getElementById("messages");
+
+    formulaire.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const texte = saisie.value.trim();
+      if (!texte) return;
+
+      messages.textContent = "Recherche en cours...";
+
+      try {
+        const response = await fetch(`/search?s=${encodeURIComponent(texte)}`);
+        const data = await response.json();
+
+        if (data.Response === "True") {
+          const elements = data.Search.map((film) => {
+            const affiche = film.Poster !== "N/A"
+              ? `<img src="${film.Poster}" alt="Affiche de ${film.Title}">`
+              : "";
+
+            return `
+              <article class="resultat">
+                ${affiche}
+                <h3>${film.Title}</h3>
+                <div>${film.Year}</div>
+                <div>${film.Type}</div>
+              </article>`;
+          }).join("");
+
+          messages.innerHTML = `
+            <div>${texte} — ${data.Search.length} résultat(s) trouvé(s)</div>
+            <div class="resultats">${elements}</div>`;
+        } else {
+          messages.textContent = `${texte} — ${data.Error || "Aucun résultat trouvé"}`;
+        }
+      } catch (error) {
+        messages.textContent = `${texte} — Erreur de recherche`;
+      }
+
+      saisie.value = "";
+    });
+  </script>
+</body>
+</html>
